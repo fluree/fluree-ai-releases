@@ -1,8 +1,6 @@
 # Fluree AI
 
 This repository hosts official binary downloads and installation instructions.
-The first public release is being prepared; the install commands below become
-available when that release is published.
 
 Fluree AI runs the database, AI chat and agents, extraction, entity resolution,
 and web app in one process. A customer license is required to start the server.
