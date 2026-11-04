@@ -2,6 +2,224 @@
 
 Customer-facing changes and upgrade information for Fluree AI.
 
+## [0.10.0-rc.9] - 2026-11-03
+
+### Added
+
+- Custom connectors can be built, installed and run from the app. An
+  administrator defines one under **Settings > Connectors**, on one page: its
+  details, outbound authentication, actions, and incoming data by webhook or
+  polling. A connector can also be imported from a manifest file or URL, and
+  exported. Anyone can install one from **Connect**, under **Custom
+  connectors**, with a form that asks only for what that connector needs.
+- Each connection has its own screen: its status, its credential (replaceable,
+  never shown), its webhook URL with secret rotation and a test delivery, its
+  polling schedule with an immediate poll and a backfill, the Spaces and teams
+  that have its tools, and the last seven days of **Activity**. **Try** runs
+  one of its actions from a form built from the action's inputs.
+  `PATCH /v1/connections/{connectionId}/credential` replaces a connection's
+  key, token or webhook secret in place.
+- When you ask to see records, the assistant can answer with a grid: a table
+  drawn in the answer from queries it writes, with its row count, the dataset
+  it reads, and paging past 25 rows. Its queries run as you, under your own
+  policies.
+- A Space's **Memory** tab shows its memories as a graph, linked through the
+  graphs they name, the competency questions they cite and their tags. The
+  list view names the memories each one shares something with, and memories
+  show their dates and sort newest first.
+- The Spaces page shows each Space's open tasks, open findings, chats,
+  memories, installed apps and last activity, flags blocked tasks and urgent
+  findings, and totals them across your Spaces, with **All**, **Personal** and
+  **Team** filters and a sort by name or by recent activity. Spaces keep the
+  same order on every visit.
+- **View as** in a Space's chat finds, by name, the records an access policy
+  is written for, such as suppliers, as well as people. Results are grouped
+  by policy, each with how many records it would see.
+- In the vocabulary workbench, a new vocabulary's or concept's preferred label
+  takes the language you choose. History shows a label renamed in several
+  languages as one rename per language, and review shows a proposal that only
+  changes a label's language.
+- A vocabulary can be read in a content language chosen apart from the
+  interface language, from the picker on its page or with `?clang=` in a
+  link. Each concept shows its label in that language where it has one, falls
+  back between regional variants such as `fr` and `fr-ca`, and marks a label
+  shown in another language with its tag. A vocabulary's own name, definition
+  and notes are edited in place, in every language.
+- A Space's default agent, the one its chat uses when no other is named, can
+  be set with `POST` and `PATCH /v1/spaces` (`defaultAgent`; `null` goes back
+  to the built-in Fluree agent). The app has no setting for it yet. An agent
+  the Space cannot use is refused with a 400.
+- `/.well-known/fluree.json` names where the server serves its own
+  documentation (`docs.url`) and its MCP endpoint (`mcp.url`, with the Space
+  id it requires), and says that a Space answers over MCP only once it has
+  been exposed. An agent given only the server's address can find both. A
+  server started without the web app leaves out the `docs` block, and a
+  cluster's query peer reports whether it serves the documentation itself.
+- The built-in documentation opens with a **Start Here** page that routes by
+  situation to an ordered path. New pages cover the Business Model and
+  building on it, access policies, bringing your own ontology, modeling
+  patterns, resolving records across systems, querying across graphs, seeding
+  a Space's memory, class definitions, and the output an extraction writes.
+  The data quality pages cover statistical rules and the **Quality** tab's
+  review queue.
+- `fluree-ai notifications reset`, run against a member's cluster listener,
+  resets the stored change notifications and makes every server drop its
+  cached copies at once. Use it after restoring the ledger store from a backup
+  while keeping the nodes' raft state (see the operations runbook). Running it
+  when nothing is wrong only costs every server one reread.
+
+### Changed
+
+- A dashboard the assistant writes opens in the side panel as it arrives,
+  drawn at half size so it keeps its layout; **expand** draws it at full size.
+- The resolution second opinion works through the whole review band. Each run
+  samples pairs from across the band and spends its budget on pairs no run has
+  asked about, remembering every answer, including unsure ones. A run whose
+  second opinion settled anything starts the next run itself, up to six in a
+  row; a run started that way settles keep-aparts only, and its merges wait
+  for the next run someone starts.
+- Before the second opinion acts on a run, twenty of its answers on the audit
+  sample must be decisive; an unsure answer no longer counts toward them.
+  Below 99% confidence, the model's plain yes or no must also agree before an
+  answer becomes a decision.
+- Concepts and vocabularies created in the app are labelled with
+  `skos:prefLabel` alone, without an `rdfs:label`.
+- Only an artifact's creator, the Space owner or an administrator can change
+  or delete a saved artifact, such as a dashboard; anyone else is refused
+  (403). The Space's **Dashboards** tab shows **Delete** only to them.
+- When a reader's grant names a policy class, the graph's property counts and
+  fact count are withheld from them rather than shown as zero. On the graph's
+  page each class's fields read **withheld by policy**, and the fact count
+  shows as a dash or is left out; the data model gives no property counts,
+  `fluree info` leaves the property figures out, and a task's property picker
+  says "no use visible to you" instead of "unused". The assistant and MCP
+  tools say data is not visible to the reader rather than that it does not
+  exist.
+- The command-line install instructions in the app and in the documentation
+  install the `fluree` CLI release this server was built against, instead of
+  the latest release.
+- Granting a graph to a Space again keeps the grant's policy classes when the
+  request leaves `policyClasses` out; a list replaces them, and an empty list
+  clears them.
+
+### Fixed
+
+- Excel workbooks uploaded through a graph's **Upload** tab, or read by an
+  extraction run, come through cell for cell: date cells are dates instead of
+  serial numbers, a blank cell no longer moves the values after it under the
+  wrong column, a formula with no saved result is empty instead of its text,
+  and Japanese reading guides are no longer added to the text. A workbook
+  whose sheets use prefixed markup, as some exporters write, is no longer read
+  as empty.
+- A quality assessment's statistical rules run again. They reported an error
+  on every graph, and on a graph whose model has access policies, the rules
+  that compare values within a group checked no records.
+- A ledger written many times in quick succession, such as by repeated
+  resolution runs, no longer piles up old index versions until the disk fills.
+  Each ledger keeps around twenty at most.
+- A first ranker can be trained and used. An extraction candidate now appears
+  on the **Training** tab, with its own evidence, so it can be activated, and a
+  resolution project offers its first fit before any version exists. Rolling
+  back on either side judges the version you pick by its own evidence.
+- Binding a graph to a model that uses OWL 2 RL or OWL 2 QL reasoning no
+  longer fails.
+- A refused graph creation no longer leaves "Creating the graph…" spinning: the
+  refusal is shown, and only a transient failure is retried. When publishing
+  golden records or creating a resolution project completes but a step after
+  it does not, you are told which step and how to finish it.
+- A member who is not an administrator no longer sees a false "Access denied"
+  banner on a graph's access screen, and sees the policy subclasses and the
+  model that governs the graph.
+- The Stack page no longer describes cloud infrastructure or offers to delete
+  the stack.
+- A server reached over plain `http` now advertises `http` in its MCP sign-in
+  metadata, connector sign-in callbacks and webhook URLs, so MCP clients can
+  sign in to it, directly or through a cluster's query peer. Behind a proxy,
+  the scheme the proxy reports still wins; set `FLUREE_AI_PUBLIC_URL` when a
+  hostname or TLS terminator is in front.
+- Saving a Space's MCP settings folds the form back into its bar, whose
+  on/off chip shows the saved setting, and the connection details appear once
+  exposure is saved on. Settings that fail to load show the error instead of
+  a form whose **Save** would overwrite them with defaults.
+- An id typed into **New graph**, **New model**, **Resolve identities** or
+  **Create a graph** keeps its hyphens; each was removed as it was typed.
+- **Settings > Fluree connection** shows a connected server as connected, with
+  its account, tier and **Refresh token**, instead of "Not connected". A
+  connection that cannot be read, and a refused token refresh, say so.
+- `upgrade.sh` no longer reports a successful upgrade when run from a Homebrew
+  installation's `share/` directory, where it left the installed `fluree-ai`
+  unchanged. It now refuses any directory without a `fluree-ai` executable and
+  names the `brew` command to use instead.
+- The chat in a Space now follows the prompt extensions written on its agent.
+- A Space whose default agent is shared with its team can be exposed over MCP
+  to the team's members.
+- A provider or **Model routing** change made in Settings takes effect within
+  seconds on every server, including a cluster's query peers, app replicas and
+  processing nodes. It could take up to a minute, with nothing to show for it,
+  while a server kept answering with the previous model. The one-minute
+  renewal of the cached configuration remains as a safety net.
+- On a cluster, connecting to or disconnecting from another Fluree, and the
+  sample catalog's token renewal, now reach every member. Until now the other
+  members kept their earlier mounts until they restarted, and their sample
+  catalog datasets failed once the token they held expired. Mounted datasets
+  resolve on members holding their own data; query peers, app replicas and
+  members reading a transaction pool do not mount them.
+- A new **IRI prefix** applies to the next resource minted, on every server.
+  Until now even the server that saved it kept minting under the previous
+  prefix for up to five minutes, and those resources kept the old prefix.
+- On a cluster, a task's new or changed data-change trigger applies on every
+  server within seconds, once the write is readable there, instead of missing
+  or mismatching commits for up to a minute.
+- The data model view shows a dataset's new prefixes and role as soon as they
+  are saved. Until now it kept the previous ones until the next write to the
+  dataset, indefinitely on a dataset nobody writes to.
+- An API key deleted right after a request used it is refused. Until now every
+  later request with it failed with an internal error, and a key already left
+  that way before the upgrade is refused too.
+- An import status change, a dataset update or a Space update that lands just
+  after the dataset or Space was deleted no longer recreates a partial record,
+  after which every read of it failed with an internal error. One already left
+  that way before the upgrade reads as deleted.
+- On Windows, the server starts again. From 0.10.0-rc.8 it stopped on its
+  first start, with a stack overflow while it upgraded its system ledger.
+- On Windows, native imports run. Each one failed before it started, with
+  "access denied" (os error 5).
+
+### Upgrade notes
+
+- An agent now runs in a Space only if the Space can use it: available
+  everywhere or shared with the Space or its team, and not hidden by the
+  Space. A chat message, task run or MCP activation naming any other agent is
+  refused instead of running, and a task run refused as it starts is closed as
+  blocked, with the reason on its timeline. Conversations and tasks given such
+  an agent earlier need another one.
+- A Space can no longer hide the default agent it chose: choose another
+  default first. The built-in Fluree agent can still be hidden; the Space's
+  chat, tasks and MCP connection keep running it while it is the default, and
+  invoking it by name is refused, as before.
+- Data an earlier version read from Excel workbooks this way can hold dates as
+  numbers and values under the wrong column. Uploading the workbook again
+  reads it correctly. A workbook whose styles are damaged now fails to open
+  instead of reading its dates as numbers.
+- When the second opinion runs through the Fluree connection, its first run
+  after the upgrade asks again about pairs it answered before.
+- Dashboards built as generated pages, the format before dashboard
+  specifications, are retired. A saved one opens to a notice and can be
+  deleted from the Space's **Dashboards** tab. Saving a new one
+  (`artifactType: "dashboard"`) is refused with a 400; save a `dashboard-spec`
+  instead. `GET /v1/spaces/{spaceId}/artifacts/{artifactId}/content` and
+  `GET /v1/dashboards/{dashboardId}/content` are removed.
+- A write refused by an access policy now gets 403, and one refused by a
+  model's shapes 400, instead of 502. A query that names a ledger that does
+  not exist, in its URL, a SPARQL `FROM`, a JSON-LD `from` or `fromNamed`, or
+  an `@t:` reference, gets 404 instead of 500. Update clients that read the
+  old codes.
+
+### Known limitations
+
+- While an administrator views a chat as someone else, the chat's grids and
+  dashboards still run with the administrator's own access, and say so.
+
 ## [0.10.0-rc.8] - 2026-10-15
 
 ### Added
