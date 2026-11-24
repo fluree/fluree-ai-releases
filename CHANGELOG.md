@@ -2,6 +2,404 @@
 
 Customer-facing changes and upgrade information for Fluree AI.
 
+## [0.10.0-rc.11] - 2026-11-23
+
+### Added
+
+- Google Drive is a document source. **Add source → Google Drive** links your
+  Google account, then opens My Drive and every shared drive you can read, one
+  level at a time; **Hold this folder** makes the source. Its files stay in
+  Drive: they are listed, previewed and extracted from there, and the copy
+  a preview or an extraction reads is kept on the server only briefly (see
+  **How to Connect Google Drive as a Source**). An administrator sets the
+  server's own Google OAuth client under **Settings > Services & keys**, which
+  shows the redirect URI to register.
+- Each document source has its own page. It shows what the source is and its
+  documents a page at a time, with folders, sorting, search, and filters by
+  type and by whether a document is mapped. Each file shows its upload status,
+  its last extraction and the graphs it feeds. Upload files, folders or zip
+  archives, make folders, rename the source, and delete documents with every
+  graph that would lose entities named first. Tick documents or folders and
+  press **Map to graph** to start an extraction on just those.
+- **Connect a warehouse** offers **Google BigQuery**. Fluree reads BigQuery's
+  Iceberg tables as a Google identity you grant, by workload identity
+  federation or with a service-account key. The dialog shows the exact values
+  to enter in Google Cloud, and **Test connection** checks the catalog and the
+  data files separately. See **How to Connect Google BigQuery** in the built-in
+  documentation.
+- A lake table's key can be proven. Under **Unique key** in a table's drawer,
+  **Check the key against every row** reads the key columns of every row, and
+  a key with a value on every row and no two rows alike is recorded with the
+  row count and the date it was proven on. Fluree then declares it to the
+  engine as the table's key wherever a mapping that keys the table this way is
+  bound. A later check that finds a repeat withdraws the proof.
+- A whole model can be exported. **Export…** on the model page downloads the
+  model at the branch and point in time in view, as Turtle, JSON-LD or RDF/XML.
+  The file holds what your access policies let you read.
+- A model's page has tabs: **Overview**, **Projects**, **Vocabularies**,
+  **Quality**, **Changes**, **Graphs** and **Settings**. **Overview** says what
+  the model holds and what is waiting on you, **Quality** lists each governed
+  graph's latest check, and **Changes** lists proposals with who approved
+  each. History files every commit a merge brought in under its proposal.
+- A class's page has tabs: **Overview**, **Projects**, **Properties**,
+  **Resolution**, **Records**, **Graphs** and **History**. **Resolution** holds
+  every matching setting of the class in one place, and a save there is checked
+  by the profile compiler first. **Records** shows golden records beside the
+  source records, and names the golden record each source record folds into.
+  With a branch of the model in view, **Overview** checks the class's records
+  against the branch's shapes, and an administrator can **Simulate with this
+  branch** for each resolution project on the class.
+- **Context** has a **Vocabularies** view beside **Graph** and **Tiles**: a card
+  per vocabulary with its definition and concept count, with find, sort,
+  **Import SKOS…** and **New vocabulary**. A vocabulary's concept tree opens on
+  its own page, and the rail's **Classes** and **Vocabularies** sections fold.
+- **New ontology** can read a data dictionary. A workbook that describes tables,
+  with a row per field giving its business name, definition, type and role, is
+  drafted as the tables it describes: a class per table and a property per
+  field, labelled and defined as the dictionary says, and a relationship for
+  each link the dictionary declares. The AI drafting assistant reads the
+  dictionary's declarations and notes too. **Read its sheets as records
+  instead** maps the sheets themselves.
+- A resolution project's tabs are named for the work: **Overview**, **Review**,
+  **Golden records**, **Rules** and **Activity**, plus **Relationships** on a
+  project that declares them. A status line above the tabs says whether the
+  project has run, is running, failed, or has answers and settings waiting,
+  and runs or stops it from any tab. **Rules** holds every setting, the
+  suggested cutoffs and weights, and the second opinion; **Activity** holds
+  match quality against your verdicts, the runs and the decision log.
+- A resolution project can offer its tuning back to the model. **Rules** shows
+  the project's fields in the model's table, each value the project moved
+  marked with who moved it, and **Offer to the model** opens a proposal on a
+  branch of the model with the tuned values. A project can also see and take
+  its model's changes.
+- A resolution profile can name the fields that license an automatic merge
+  together, such as a name, a full birth date and a street, and can hold for
+  review, or keep apart, any pair a field contradicts, such as two given names
+  that are not one name, even when an email agrees. Automatic merging can be
+  turned off. Review cards say when one of these rules kept a pair waiting.
+- Each pair in the review queue says why the run left it for you: its score is
+  below the merge line, no identifier agrees, or earlier answers disagree about
+  its records. **Update resolved records** applies every verdict given since
+  the last run, from the queue or the status line, and a review is done once
+  every uncertain pair has an answer, however few verdicts that took.
+- After a full run, **Rules** can suggest new field weights fitted from the
+  run's own records, with no verdicts needed. Your verdicts then place the
+  cutoffs that go with them, and the two can be applied together once they
+  hold up on held-out verdicts.
+- A model can declare a person's street, city and postal code on the address
+  record the person links to, and a resolution project matches on them and can
+  block on the postal code. Each address is compared whole, against one
+  address of the other record, so a move counts as one disagreement.
+- Anyone who can read a resolution project's graph sees its runs and how many
+  pairs wait for review, on the project's page and on a class's **Projects**
+  tab.
+- The extraction wizard grounds on the vocabularies you choose. It lists the
+  model's vocabularies, all checked to begin with, so a model that also holds
+  code lists or a second language's copy no longer hands every one of them to
+  the matcher. Its steps are worded more plainly.
+- The extraction wizard remembers a source's set-up. The target graph,
+  vocabularies, linked graphs, taxonomy and extraction of the last run started
+  from a source's page come back the next time the wizard opens on that source,
+  in the same browser. Anything deleted since is dropped.
+- Entity recognition reads a document in its own language. Names and terms are
+  matched by their dictionary forms, so plurals and inflected forms meet the
+  vocabulary. English and French are built in; sixteen more languages use the
+  lemma table set, which a server connected under **Settings > Fluree
+  connection** downloads on first use and any other server reads from
+  `FLUREE_AI_LEMMA_PACK`. The public knowledge base it links to is built from
+  YAGO 4.6, with English and French labels; point `FLUREE_AI_YAGO_PACK` at the
+  new index set to use it.
+- An **OpenAI-compatible** LLM provider reaches any endpoint that speaks the
+  OpenAI Chat Completions API, such as an enterprise LLM gateway or a
+  self-hosted model server, for chat, agents, extraction and document parsing,
+  and for embeddings when no OpenAI provider is configured. Configure it under
+  **Settings > LLM Configuration > LLM providers**, or with
+  `OPENAI_COMPATIBLE_API_KEY` and `OPENAI_COMPATIBLE_BASE_URL`. Model ids that
+  contain `/` reach the endpoint unchanged.
+- An LLM provider other than Bedrock can authenticate with OAuth 2.0 client
+  credentials instead of an API key: the server fetches a short-lived token
+  from the identity provider, reuses it for most of its lifetime and renews
+  it before it expires or when the endpoint refuses it, for chat, embeddings
+  and the model list. Set `auth` and `clientSecret` on the provider through
+  the API, or `<PREFIX>_TOKEN_URL`, `<PREFIX>_CLIENT_ID` and
+  `<PREFIX>_CLIENT_SECRET` in the environment.
+- An LLM provider other than Bedrock can carry extra headers (`extraHeaders`,
+  and `secretHeaders` for values kept as secrets) and extra top-level body
+  fields (`extraBody`) for every request to it, and body fields to leave out
+  (`dropBodyFields`), through the API or `<PREFIX>_EXTRA_HEADERS`,
+  `_SECRET_HEADERS`, `_EXTRA_BODY` and `_DROP_BODY_FIELDS`. A provider's own
+  headers and fields always win, and a secret header can be a provider's only
+  credential.
+- **Model routing** has a **Link** row, for the decisions that say which known
+  entity a name refers to. It can be given its own model without moving chat
+  or extraction.
+- Each provider card under **Settings > LLM** shows whether its key works:
+  accepted, refused, misconfigured or unreachable. `GET
+/v1/llm-providers/status` checks every provider and `POST
+/v1/llm-providers/{id}/check` checks one.
+- A long query can run as a job. Send a query with `Prefer: respond-async` and
+  the server answers `202` with a job id at once; `GET
+/v1/fluree/query-jobs/{jobId}` reports its state, `…/result` returns the
+  answer, and `DELETE` cancels it. A job is visible to whoever started it and
+  to administrators, each user may have ten running, and a result is kept for
+  24 hours. A request without the header behaves as before.
+- When mapping warehouse tables, a table can add details to the records another
+  table makes, without declaring a class of its own. The mapping screen says
+  what each table's rows are and which table makes the records. Use it for a
+  history or detail table, so each record is typed once.
+- `fluree-ai backup` writes a stopped server's data directory to one file, and
+  `fluree-ai restore` puts it back at any path, on any machine, under the same
+  version or a newer one. The file holds every ledger, the uploaded documents,
+  the run history and the users; it leaves out caches and settings.
+  `--include-secrets` adds the server's connection to a Fluree account, the
+  Google accounts users linked, single sign-on client secrets, the provider
+  keys saved under **Settings > LLM Configuration**, catalog credentials and
+  the license. **How to Back Up and Restore a Standalone Server** lists
+  everything an archive holds. `backup inspect` says what a file holds and
+  whether this version can restore it, and `backup verify` checks every file
+  in it against its checksum. A restore goes into a new or empty data
+  directory, never merges, and puts nothing in place unless the whole file
+  verifies. A file from an older version needs `--accept-upgrade`.
+- `fluree-ai restore` takes an `https://` URL in place of a file and restores
+  it as it downloads, and `--start` brings the server up when it finishes.
+- A backup can be encrypted so that it can be published and opened only by
+  whoever was given its secret: `backup --encrypt` generates a key and prints
+  it once, and `backup --passphrase` takes a passphrase
+  (`FLUREE_AI_ARCHIVE_PASSPHRASE`, or asked for). Restoring one reads
+  `FLUREE_AI_ARCHIVE_KEY` or `FLUREE_AI_ARCHIVE_PASSPHRASE`, or asks. Without
+  the secret, `backup inspect` shows only which version the data needs.
+- A local lake: Iceberg tables in `<data-dir>/lake/<folder>/<namespace>/<table>`
+  are read from the server's own disk, with no catalog service and no object
+  store. Connect one under **Connect a warehouse → Tables on this server**,
+  browse it, generate a mapping and query it as a graph. A backup carries the
+  tables with everything else, and a server restored at another path
+  registers its lake graphs there when it starts. Row samples, the refine
+  tools and publishing into a local lake are not available yet.
+- `fluree-ai notices` prints the third-party data the product uses and its
+  licences. The same text ships as `THIRD-PARTY-NOTICES` in the archive and
+  the container images.
+
+### Changed
+
+- An extraction run stays **running** until its output is saved to the graph,
+  and shows "saving N of M" while it does.
+- Starting a run over documents another run is still working on is refused
+  (409 `RunInFlight`) instead of running both.
+- When a model call made while extracting or resolving gets no usable answer,
+  even after retries, the document fails with a message that names the chunk
+  or batch, how many had answered, and that it can be re-run once the model is
+  reachable. The call to the model is retried after a rate limit (`429`) or a
+  server error first.
+- Extraction, classification and entity resolution send their sampling
+  temperature (0 unless set) to the models that take one, so their answers
+  vary less from run to run. A model that takes no temperature is sent none.
+- Entity resolution compares records the way people write them. A name reads
+  a known nickname as agreement (_Bob_ and _Robert_), compares an initial as
+  an initial, and folds accents on Latin letters (_José_ and _Jose_). A date
+  reads a bare year inside a full date as partial agreement, and two dates a
+  day apart, a year one off, the month and day exchanged or two neighbouring
+  digits swapped as a likely typo. A street line agrees however its case,
+  punctuation, street type or direction is written, and reads a unit apart
+  from the street.
+- The business model's Person class starts with better resolution settings: a
+  family name worth more than a given name, a given name that holds a pair for
+  review when it contradicts, a birth date and a generational suffix (Jr., Sr.)
+  that keep namesakes apart, tax IDs that identify no one counted as empty,
+  blocking keys built from name and birth date, and shared addresses weighed
+  less.
+  Existing projects keep their settings; their **Model** card shows the
+  change.
+- Resolving a large set of records uses every core and much less memory, and
+  a re-run writes only what changed.
+- Grounding against a large exported set of records (more than 100,000, which
+  a grounding view can change with `largePackRecords`) links a mention on its
+  own only when it is a multi-word name with support in the same document,
+  such as a registry code (LEI, CAS, ISIN) for the same record, another
+  mention of it, or a legal form after a distinctive word. Other mentions are
+  decided in context, by the trained ranker or the AI arbiter, or left for
+  review. In any set exported from a class, a record whose label is a single
+  common business word, such as "Core" or "Finance", is decided in context
+  the same way, while its multi-word names still link directly.
+- A graph read in place shows a class or reference count its tables cannot
+  give exactly as unknown, with an upper bound where one is known, and keeps
+  such a class in the instances view, the grounding picker and the data model
+  agents read.
+- **Connect** lists sources most recently changed first, and a source's card
+  opens its page.
+- The concept page in a vocabulary groups its fields into Labels, Description,
+  Hierarchy, Codes and mappings, Editorial notes and History. Each group
+  folds, the first three start open, and a folded heading shows how many
+  values it holds. A concept's status is changed from the **⋯** menu.
+- The model graph zooms on pinch or Ctrl/⌘ + wheel. A plain wheel scrolls the
+  page.
+- Matching against a model, **Check keys and joins**, **Resolve with AI** and
+  refine show that they are running, with the time elapsed.
+- A relationship that ends up pointing from a record to itself, such as after
+  two records are merged into one, is rejected as a self-reference and kept
+  for review instead of being written to the graph.
+- A name written with a capital letter refers only to its capitalised
+  repetitions: an entity "Apple" no longer takes every "apple" in the text.
+- On a hosted stack, a query that would outlast the 60-second limit in front
+  of the server is stopped with an error that names `Prefer: respond-async`.
+- A data directory can be moved or copied to another path and started there.
+  The addresses the server records no longer contain the directory's location.
+- The database engine is fluree/db v4.2.9. Changes a query or a write can
+  notice:
+  - A write that carries a typed value whose text is not a value of its type,
+    such as `"N/A"^^xsd:integer`, is refused and commits nothing. JSON-LD
+    writes and `INSERT DATA` already refused one; now Turtle, TriG and
+    N-Triples writes do too (a bulk upload in Turtle, a vocabulary or model
+    updated from a file), and so do a SPARQL update that builds one with
+    `STRDT` or copies one with `INSERT … WHERE`, and a `@json` value whose text
+    is not JSON. A bulk upload in Turtle commits in chunks, so a refused chunk
+    leaves the others loaded. Importing files into a new ledger still keeps
+    such a value as text under its type.
+  - A value a ledger holds as text under a type it does not fit comes back in
+    JSON-LD results with that type,
+    `{"@value": "landed", "@type": "xsd:integer"}`, including under a type
+    JSON-LD reads from a number or a boolean (`xsd:integer`, `xsd:double`,
+    `xsd:boolean`). An `rdf:JSON` value whose text is not JSON comes back the
+    same way.
+  - Importing a JSON-LD file into a new ledger
+    (`POST /v1/datasets/{datasetId}/import`) refuses a value object whose
+    `@value` is an array or a map unless it, or its term, has a `@json` type
+    (or `@vector`, for an array), with an error that names the `@type` to add.
+  - A SPARQL UPDATE request may hold several operations separated by `;`. They
+    are applied in order and committed together.
+  - SPARQL `DROP GRAPH`, `DROP DEFAULT`, `DROP NAMED` and `DROP ALL` take a
+    graph and its history out of queries, where they used to retract its facts
+    as `CLEAR` does. Dropping needs an identity with no restricting policy, and
+    dropping a graph that does not exist is an error unless `SILENT`.
+  - `FILTER(?x = "text")`, and `<`, `<=`, `>`, `>=` against a plain string,
+    compare the exact term: they no longer match a language-tagged
+    `"text"@en` or a value of another type such as `xsd:anyURI`. Compare
+    `STR(?x)` to match the text whatever its tag or type.
+  - A query over several graphs (the union default graph, or several `FROM`
+    graphs) counts, groups and joins over all of them.
+  - Cypher refuses `RETURN`, `WITH` or `UNWIND … AS v` where `v` is already
+    bound, and `` n.`@id` `` or `` n.`@type` ``, with an error that names the
+    form that works (`AS v_value`, `id(n)`, `labels(n)`). A read clause
+    (`MATCH`, `OPTIONAL MATCH`, `WITH`, `UNWIND`, `CALL { … }`) written after a
+    write clause is refused too: put the reads first, or split the statement
+    in two.
+  - An access policy that targets a class (`f:onClass`) applies, in a
+    reasoning query, by the classes reasoning derives. Over a mapped table
+    whose rows give a subject its class and which declares no key, such a
+    policy can refuse the query with an error that names the mapping: declare
+    the table's key (`f:key`), or target the policy by property.
+  - A branch of a ledger that was never indexed, and a ledger copied under
+    another name, read their source's ledger config, so its policies,
+    uniqueness and SHACL settings apply to them.
+  - An R2RML graph source answers with each triple its mapping defines once,
+    so `COUNT`, `SUM` and `AVG` over a table with repeated rows no longer need
+    `DISTINCT`, and a reference to a parent with a non-unique key keeps every
+    edge.
+  - Queries over an Iceberg graph source can use sub-selects, and a triples
+    map over an Iceberg table can be narrowed with a restricted `rr:sqlQuery`.
+    A join in a query over a mapped table (Iceberg, SQL or Delta) is produced
+    a batch at a time, stops when the query is cancelled, and counts against
+    its memory budget.
+  - JSON-LD reads `@vocab` and `@json` term coercion, a term's `@language`,
+    terms defined as `null` and `@index` maps as JSON-LD 1.1 defines them, and
+    a number or boolean `@value` keeps its datatype. Values an earlier version
+    wrote through such a term keep the shape they were stored in.
+  - A JSON-LD query's `iri` constant expands through the `@context`, as an
+    `@id` does: `["iri", "skos:Concept"]` with `skos` defined is the full IRI.
+    A prefix the `@context` does not define (`tag:`, `arn:`) is an "Unresolved
+    compact IRI" error unless `opts.strictCompactIri` is `false`.
+  - Fuel moves with a query's shape, both ways. Queries answered by a fast
+    path (counts, aggregates, top-k, label regex, geo search), range reads
+    under a policy or across datasets, and joins charge for each index leaflet
+    they read, as scans already did, so they cost more and a fuel limit
+    (`fluree-max-fuel`) can stop them sooner. A string `FILTER` the engine now
+    answers on a faster path can cost far less.
+  - Publishing or exporting a ledger as a `.flpack` refuses an object of 4 GiB
+    or more, with an error that names it.
+  - Edge annotations written in a named graph reach the index's annotation
+    store, so an export carries them.
+  - The `fluree` CLI draws its tables with box-drawing characters. A script
+    that reads its table output should ask for `--format json`.
+
+  The engine's compatibility notes list the rest.
+
+### Fixed
+
+- A thinking level set on a **Model routing** row is applied.
+- The model screen shows a change the assistant makes to the model as soon as
+  it is made, without a reload.
+- A warehouse mapping reopens with the choices you saved, and editing a
+  table's key on the mapping screen keeps the table and its drawer on screen
+  while it matches again.
+- **Load more** on a graph read in place never lists a record twice.
+- Importing a spreadsheet keeps the leading zeros of a column of zero-padded
+  numbers, such as ZIP codes, by reading it as identifiers.
+- Signing in and refreshing a session have rate limits of their own, apart
+  from the rest of the API's, and a successful sign-in no longer counts toward
+  the limit on attempts. Every `429` a rate limit answers carries
+  `Retry-After`.
+- Reindexing a ledger with `fluree reindex <ledger> --remote <remote>`, or
+  through `POST /v1/admin/reindex/{ledgerId}`, rebuilds its index from its
+  commits on a standalone server. The CLI waits for the rebuild and reports
+  the `t` the new index reaches.
+- On a standalone server, the Google redirect URI, the MCP sign-in metadata
+  and the discovery documents take their scheme and host from
+  `FLUREE_AI_PUBLIC_URL` when it is set.
+
+### Upgrade notes
+
+- The next run of every resolution project is a full run, because the
+  comparison rules changed. Scores change on that run for projects with name,
+  date, street or address fields.
+- A resolution project's saved settings keep working. A profile saved before
+  this release is read in this release's terms, and saved in them the first
+  time it is read, so the **Rules** tab and every run read the same settings.
+  Saving a retired setting through the API is refused, with a message naming
+  what replaced it. Verdicts stand; their evidence is refreshed by the next
+  run.
+- A resolution project created before this release keeps its golden records
+  in the project's default graph. A project created after the upgrade keeps
+  its results in a generation of their own, and each full run replaces the
+  generation; create a project again to move it to generations.
+- `FLUREE_CURATION_GC_GENERATIONS` now counts a resolution project's
+  generations too: it is how many runs' results a project keeps, the current
+  one included. A server that set it to 0 now also keeps every generation a
+  full run replaces; set it to 1 to drop them again.
+- A Google Drive source now holds one folder, chosen when the source is made.
+  A Drive source created with an earlier version has none: create it again on
+  its folder.
+- Backup, restore and moving are for data directories created by this version
+  or a later one. A directory created earlier keeps the absolute paths it
+  recorded for past runs and for each dataset's approved model, which resolve
+  only at the original location, so `fluree-ai backup` refuses it: copy it
+  while the server is stopped, and put it back at the same path.
+- `fluree-ai backup` refuses a data directory that links to somewhere outside
+  itself, because what the link holds would not be in the file.
+  `--skip-external-links` backs up the rest. The links to a YAGO index or lemma
+  tables given with `FLUREE_AI_YAGO_PACK` or `FLUREE_AI_LEMMA_PACK` are not
+  refused: set the same variable where the backup is restored.
+- Multi-node deployments (`--store-dir`, `--data-raft`) are not covered by
+  `fluree-ai backup`. Copy every node's data directory and the shared store
+  while the servers are stopped, as before.
+- A single-node data directory now holds a `version.stamp` file, recording the
+  version that last started it. A backup reads it, and refuses a directory
+  without one.
+- At its first start on this version, a server moves its connection to a
+  Fluree account, the Google accounts its users linked and its single sign-on
+  client secrets into its secrets directory, beside the keys saved in the app.
+  A server restored from a backup made without `--include-secrets` is
+  connected to none of them.
+- A ledger that has dropped a graph cannot be read by an earlier release, so a
+  server cannot be rolled back past this one once a graph has been dropped. A
+  resolution project created on this version drops one each time a full run
+  replaces its results.
+- Reindex a ledger that was created by importing files with an earlier
+  version, if the files held `@json` (`rdf:JSON`) or `xsd:duration` values, so
+  that this version reads those values as they were written
+  (`POST /v1/datasets/{datasetId}/reindex`). The same goes for a ledger
+  published as a `.flpack` whose index Fluree CLI 4.2.7 or earlier built by
+  importing files (`fluree create --from` or `fluree graph import`). Ledgers
+  written by transactions need nothing.
+
 ## [0.10.0-rc.9] - 2026-11-03
 
 ### Added
